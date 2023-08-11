@@ -7,8 +7,12 @@ namespace LoginWithoutIDCore.Data
     {
         public LoginDbContext(DbContextOptions<LoginDbContext> dbContextOptions) : base(dbContextOptions)
         {
-            
         }
-        public virtual DbSet<User> Menus { get; set; }
+        public virtual DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.UseSerialColumns();
+        }
     }
 }

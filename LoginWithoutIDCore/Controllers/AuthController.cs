@@ -3,8 +3,6 @@ using LoginWithoutIDCore.Data;
 using LoginWithoutIDCore.Models.Dto;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -18,7 +16,7 @@ namespace LoginWithoutIDCore.Controllers
         private readonly LoginDbContext _dbContext;
         private readonly IMapper mapper;
 
-        public AuthController(LoginDbContext DbContext,IMapper mapper)
+        public AuthController(LoginDbContext DbContext, IMapper mapper)
         {
             _dbContext = DbContext;
             this.mapper = mapper;
@@ -35,16 +33,21 @@ namespace LoginWithoutIDCore.Controllers
                 {
                     if (user.Password == loginRequestDto.Password)
                     {
-                        user.TokenStatus = true;
+                        //user.TokenStatus = true;
                         await _dbContext.SaveChangesAsync();
                         var Claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name,user.Name),
-                        new Claim(ClaimTypes.Email,user.Email),
-                        new Claim(ClaimTypes.Role,user.Roles),
-                        new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
-                    };
+                        {
+                            new Claim(ClaimTypes.Name,user.Name),
+                            new Claim(ClaimTypes.Email,user.Email),
+                            new Claim(ClaimTypes.Role,user.Roles),
+                            new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
+                        };
+
+                        HttpContext.Session.SetString(SessionVariables.SessionKeySessionId, user.Id.ToString());
+                        HttpContext.Session.SetString(SessionVariables.SessionKeyUserName, user.Name);
+
                         var claimsIdentity = new ClaimsIdentity(Claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
                         await HttpContext.SignInAsync(
                                     CookieAuthenticationDefaults.AuthenticationScheme,
                                     new ClaimsPrincipal(claimsIdentity));
@@ -54,9 +57,9 @@ namespace LoginWithoutIDCore.Controllers
                             user.Name,
                             user.Roles
                         });
-                    } 
+                    }
                 }
-                return BadRequest(new {Message = "You are already logged in"});
+                return BadRequest(new { Message = "You are already logged in" });
             }
             return Unauthorized();
 
@@ -71,10 +74,10 @@ namespace LoginWithoutIDCore.Controllers
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == int.Parse(userIdClaim.Value));
             if (user != null)
             {
-                user.TokenStatus = false;
+                //user.TokenStatus = false;
                 await _dbContext.SaveChangesAsync();
             }
-
+            HttpContext.Session.Clear();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return Ok(new { message = "Logout successful" });

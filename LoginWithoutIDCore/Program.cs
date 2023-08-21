@@ -1,13 +1,11 @@
-using LoginWithoutIDCore.CustomAuth;
 using LoginWithoutIDCore.Data;
 using LoginWithoutIDCore.Mapper;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 // Add services to the container.
 
@@ -31,10 +29,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 {
                     OnSigningIn = context =>
                     {
-                        DateTime expirationDateTime = DateTime.UtcNow.AddMinutes(2);
+                        DateTime expirationDateTime = DateTime.UtcNow.AddMinutes(10);
                         // Set the expiration datetime for the cookie
                         context.CookieOptions.Expires = expirationDateTime;
-
 
                         return Task.CompletedTask;
                     }
@@ -42,9 +39,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 //options.Cookie.Domain = ".mydomain.com";
                 options.Cookie.SameSite = SameSiteMode.Strict;
                 options.Cookie.Name = "AuthCookie";
-
                 //options.ExpireTimeSpan = expirationDateTime;
             });
+
 
 //var serviceProvider = builder.Services.BuildServiceProvider();
 //var dbContext = serviceProvider.GetRequiredService<LoginDbContext>();
@@ -57,6 +54,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 //});
 //builder.Services.AddScoped<IAuthorizationHandler, UniqueSessionRequirement>();
 
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "SessionCookie";
+    options.IdleTimeout = TimeSpan.FromMinutes(1);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -65,6 +72,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseSession();
 
 app.UseHttpsRedirection();
 

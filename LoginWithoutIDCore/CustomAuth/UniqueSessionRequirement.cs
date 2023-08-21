@@ -1,11 +1,8 @@
 ﻿using LoginWithoutIDCore.Data;
+using LoginWithoutIDCore.Models.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Linq;
-using LoginWithoutIDCore.Models.Domain;
 
 namespace LoginWithoutIDCore.CustomAuth
 {

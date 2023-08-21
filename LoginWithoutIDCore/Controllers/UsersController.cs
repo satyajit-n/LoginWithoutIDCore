@@ -2,9 +2,12 @@
 using LoginWithoutIDCore.Data;
 using LoginWithoutIDCore.Models.Domain;
 using LoginWithoutIDCore.Models.Dto;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace LoginWithoutIDCore.Controllers
 {
@@ -26,11 +29,19 @@ namespace LoginWithoutIDCore.Controllers
         [Authorize(Roles = "string")]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
+            var userSessionId = HttpContext.Session.GetString(SessionVariables.SessionKeySessionId);
+            var userCookieId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userCookieId.Value != userSessionId)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return BadRequest("Session Expired");
+            }
             if (_context.Users == null)
             {
                 return NotFound();
             }
-            return await _context.Users.ToListAsync();
+            var UserList = await _context.Users.ToListAsync();
+            return Ok(UserList);
         }
 
         // GET: api/Users/5
